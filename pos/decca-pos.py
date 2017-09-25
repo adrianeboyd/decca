@@ -356,7 +356,7 @@ while Grams:
         # if there is a position in the corpus to the right of the entire
         # n-gram (last corpus position = index-1 !) and no n-gram has
         # been created at this key, create a new n-gram to the right
-        if ((numkey + (n-1)) < (index-1)) and (not Store.has_key(key)):
+        if ((numkey + (n-1)) < index)) and (not Store.has_key(key)):
 
             # newkey will be the position of the *last* token in the
             # n-gram; key will be the position we index the n-gram on,
