@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<!-- Decca-XML Schema Declaration
+
+     The Decca-XML schema is based on the Malt-XML schema: 
+     http://w3.msi.vxu.se/~nivre/research/treebank.xsd.txt 
+-->
+
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+	<!-- Header -->
+	<xsd:complexType name="valueType">
+   	<xsd:attribute name="name" type="xsd:string" use="required"/>
+ 	</xsd:complexType>
+
+	<xsd:complexType name="attributeType">
+		<xsd:sequence>
+			<xsd:element name="value" type="valueType" minOccurs="0" maxOccurs="unbounded"/>
+		</xsd:sequence>
+     	<xsd:attribute name="name" type="xsd:string" use="required"/>
+ 	</xsd:complexType>
+
+	<xsd:complexType name="annotationType">
+		<xsd:sequence>
+			<xsd:element name="attribute" type="attributeType" minOccurs="1" maxOccurs="unbounded"/>
+		</xsd:sequence>
+ 	</xsd:complexType>
+
+	<xsd:complexType name="headerType">
+		<xsd:sequence>
+			<xsd:element name="annotation" type="annotationType" minOccurs="1" maxOccurs="unbounded"/>
+		</xsd:sequence>
+ 	</xsd:complexType>
+            
+
+	<!-- Body -->
+	<xsd:complexType name="headType">
+		<xsd:attribute name="id" type="xsd:nonNegativeInteger" use="required"/>
+		<xsd:attribute name="deprel" type="xsd:string" use="required"/>
+	</xsd:complexType>
+
+	<xsd:complexType name="assocType">
+		<xsd:attribute name="id" type="xsd:nonNegativeInteger" use="required"/>
+		<xsd:attribute name="rel" type="xsd:string" use="required"/>
+	</xsd:complexType>
+
+	<xsd:complexType name="wordType">
+		<xsd:sequence>
+			<xsd:element name="head" type="headType" minOccurs="0" maxOccurs="unbounded"/>
+		</xsd:sequence>
+		<xsd:attribute name="id" type="xsd:nonNegativeInteger" use="required"/>
+		<xsd:attribute name="form" type="xsd:string" use="required"/>
+		<xsd:attribute name="lemma" type="xsd:string" use="optional"/>
+		<xsd:attribute name="postag" type="xsd:string" use="optional"/>
+		<xsd:attribute name="cpostag" type="xsd:string" use="optional"/>
+		<xsd:attribute name="chunk" type="xsd:string" use="optional"/>
+		<xsd:attribute name="externid" type="xsd:string" use="optional"/>
+ 	</xsd:complexType>
+
+	<xsd:complexType name="abstractType">
+		<xsd:sequence>
+			<xsd:element name="head" type="headType" minOccurs="0" maxOccurs="unbounded"/>
+			<xsd:element name="assoc" type="assocType" minOccurs="0" maxOccurs="unbounded"/>
+		</xsd:sequence>
+		<xsd:attribute name="id" type="xsd:nonNegativeInteger" use="required"/>
+		<xsd:attribute name="form" type="xsd:string" use="optional"/>
+		<xsd:attribute name="type" type="xsd:string" use="required"/>
+		<xsd:attribute name="externid" type="xsd:string" use="optional"/>
+	</xsd:complexType>
+
+	<xsd:complexType name="subwordType">
+		<xsd:sequence>
+			<xsd:element name="head" type="headType" minOccurs="0" maxOccurs="unbounded"/>
+		</xsd:sequence>
+		<xsd:attribute name="id" type="xsd:nonNegativeInteger" use="required"/>
+		<xsd:attribute name="form" type="xsd:string" use="required"/>
+		<xsd:attribute name="lemma" type="xsd:string" use="optional"/>
+		<xsd:attribute name="postag" type="xsd:string" use="optional"/>
+		<xsd:attribute name="type" type="xsd:string" use="required"/>
+		<xsd:attribute name="externid" type="xsd:string" use="optional"/>
+	</xsd:complexType>
+
+	<xsd:complexType name="sentenceType">
+		<xsd:sequence>
+			<xsd:element name="word" type="wordType" minOccurs="1" maxOccurs="unbounded"/>
+			<xsd:element name="subword" type="subwordType" minOccurs="0" maxOccurs="unbounded"/>
+			<xsd:element name="abstract" type="abstractType" minOccurs="0" maxOccurs="unbounded"/>
+		</xsd:sequence>
+		<xsd:attribute name="id" type="xsd:nonNegativeInteger" use="required"/>
+		<xsd:attribute name="externid" type="xsd:string" use="optional"/>
+		<xsd:attribute name="user" type="xsd:string" use="optional"/>
+		<xsd:attribute name="date" type="xsd:string" use="optional"/>
+ 	</xsd:complexType>
+
+	<xsd:complexType name="bodyType">
+		<xsd:sequence>
+			<xsd:element name="sentence" type="sentenceType" minOccurs="1" maxOccurs="unbounded"/>
+		</xsd:sequence>
+ 	</xsd:complexType>
+
+	<!-- Treebank -->
+	<xsd:complexType name="treebankType">
+		<xsd:sequence>
+			<xsd:element name="header" type="headerType" minOccurs="1" maxOccurs="1"/>
+			<xsd:element name="body" type="bodyType" minOccurs="1" maxOccurs="1"/>
+		</xsd:sequence>
+		<xsd:attribute name="id" type="xsd:string" use="optional"/>
+ 	</xsd:complexType>
+
+	<xsd:element name="treebank" type="treebankType"/>
+</xsd:schema>

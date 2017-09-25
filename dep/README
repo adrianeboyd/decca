@@ -1,0 +1,203 @@
+decca-dep.py
+
+Code to calculate all variation n-grams for dependency corpora.
+
+    Authors:  Markus Dickinson, Detmar Meurers, and Adriane Boyd
+    Date: February 2009
+
+------------------------------------------------------------------
+
+README Contents:
+
+	License
+	Usage
+	Required Software
+	User Settings
+	Input/Output Format
+	Generating Input from Decca-XML Format
+
+------------------------------------------------------------------
+
+License
+
+    The DECCA Project software is free software; you can redistribute it 
+    and/or modify it under the terms of the GNU General Public License as 
+    published by the Free Software Foundation; either version 2 of the 
+    License, or (at your option) any later version.
+
+    This software is distributed in the hope that it will be useful, but 
+    WITHOUT ANY WARRANTY; without even the implied warranty of 
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
+    General Public License for more details.
+
+    You should have received a copy of the GNU General Public License 
+    along with this software; if not, write to the Free Software 
+    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 
+    USA
+
+------------------------------------------------------------------
+	
+Usage
+
+$ ./decca-dep.py -c /path/to/corpus -t /path/to/filtertries \\
+  -d /path/to/output/dir -f output_file_stem
+
+Command-line options (see also User Settings below):
+
+-c/--corpus        specify the (absolute) corpus file name
+-t/--ftree         specify the (absolute) filter tries file name
+-d/--directory     specify the (absolute) output directory name
+-f/--file          specify the base name for the output files
+-h/--help          display this help menu
+
+
+------------------------------------------------------------------
+
+Required Software
+
+
++ python >= 2.3 (http://www.python.org)
+
++ db >= 3.2 is needed by bsddb, see notes below (http://www.sleepycat.com)
+
++ bsddb for unix/linux:
+
+  bsddb is included in python >= 2.3 for unix/linux, but you may run into 
+  problems if python was installed before db or with an older version of 
+  db.  If you get the error "ImportError: No module named _bsddb" or an 
+  error related to db libraries, make sure you have db >= 3.2 installed 
+  and reinstall or upgrade python.
+
+  bsddb for Mac OS X:
+
+  The built-in python for some versions of Mac OS X may not include 
+  support for bsddb because db is not available.  If you get a module not 
+  found error for bsddb or "ImportError: No module named _bsddb", you may 
+  need to install db and reinstall or upgrade python.
+
+For Mac OS X:
+
+  It is easy to install everything using macports:
+
+  $ sudo port install python24 py-bsddb
+
+------------------------------------------------------------------
+
+User Settings
+
+Please look at the user settings section at the top of decca-dep.py and 
+adjust the settings based on your current system configuration and input 
+corpus.
+
++ Depending on your input corpus, you may wish to modify the token 
+  separator used to separate words and POS tags in the output files.  The 
+  default separator will be fine for the WSJ corpus and many other English 
+  corpora.  Any sequence which does not appear in the corpus will work, 
+  but a simple space will not work for a corpus which contains multi-word 
+  tokens (e.g. "in front of" or "[ mdash").
+
+tokensep = " ## "
+
++ Algorithm and output settings
+
+usedeppos = 0                 # use dependent POS instead of word
+                              # in comparisons
+filter_punctuation = 0        # see filter on line 937; the example
+                              # uses PDT punctuation tag filter,
+                              # customize for your corpus if you set
+                              # this to 1
+
+charencoding = "utf-8"        # encoding for xhtml output
+
+# See line 567 to choose the appropriate context filter for your corpus.
+# See Boyd et al. 2008 section 4.2 for explanations of each heuristic.
+
+
++ Instead of specifying the input/output filenames and unit length on the 
+  command line, you may specify them directly in decca-dep.py
+
+# Optional: default parameters to be used if unspecified on command line
+# (Files specified on the command line will override these settings.)
+
+input_corpus = "/path/to/corpus"
+filtertries = "/path/to/filtertries"
+destination_dir = "/path/to/output/dir"
+output_file_stem = "dep"
+
+------------------------------------------------------------------
+
+Input/Output Format
+
++ Start with a corpus in Decca-XML format as described here:
+  http://decca.osu.edu/decca-xml.html
+
+  Use the instructions in the following section to generate the 
+  tab-separated id-word-pos-head format required by decca-dep.py.  (Don't 
+  worry about the fact that the words are duplicated in the final column.  
+  This was added to allow the tokens compared (second column) to be 
+  modified to more general classes in the comparison but have the original 
+  corpus tokens (final column) in the output.)
+
++ The filtertries file looks as follows.  See the next section for
+  how to generate it from your Decca-XML corpus.
+
+s1_1	AT-R	11	Individuell	beskattning
+s1_2	ET-L	11	beskattning	av
+s1_2	ROOT	1	beskattning
+s1_3	PA-L	11	av	arbetsinkomster
+s1_3	NIL	1	av
+s2_1	PA-L	11	Genom	skattereformen
+s2_1	AA-R	101	Genom	införs
+s2_3	SS-L	101	införs	beskattning
+s2_3	IP-L	100000001	införs	.
+s2_3	ROOT	1	införs
+
+The columns are separated by tabs.  The first column is the id of the 
+first token in the constituent, the second column is the non-terminal 
+symbol with -L or -R to indicate the direction of the dependency within 
+the sentence, the third column is a binary corresponding to the entire 
+span of the token sequence (1's correspond to tokens in the constituent 
+and 0's to tokens not in the constituent),and the fourth and following 
+columns are the word token sequence corresponding to the constituent.  
+There is an entry for every non-terminal in the corpus and a NIL entry for 
+every token sequence in some sentence that corresponds to a non-terminal 
+in another sentence in the corpus but doesn't correspond to a non-terminal 
+in this sentence.
+
++ The output file is an XHTML file containing an ordered list of all 
+  nuclei found with variation after the specified filtering.  They are 
+  listed in reverse order based on the amount of context in the longest 
+  example.  The context is shown in red/blue, the nucleus is shown in 
+  red/blue bold, and other intervening tokens not in the context are shown 
+  in black.  Red/blue is related to the dependency context heuristic.  
+  Red instances all have the same head relation/function; all others are 
+  in blue.
+
+  The sNNNN links go to separately generated images of the dependency 
+  trees which are used for reference when evaluating whether the 
+  identified variation is indeed an error.  If you are working with a 
+  corpus in a format similar to those included in Boyd et al. 2008 and are 
+  in need of a script to generate images, contact us for help with scripts 
+  to generate suitable images.  You can also try modifying the included 
+  iso-8859-1deccaxml2ps.py script which uses the ps2epsi and pstoimg 
+  unix/linux programs to generate images in png format.
+
+------------------------------------------------------------------
+
+Generating Input from Decca-XML Format
+
+If your corpus is in Decca-XML format, you can generate the input files 
+with provided scripts.
+
+Corpus file:
+
+$ ./deccaxml-xsltproc.py deccaxml-idwordposhead.xsl corpus.xml > 
+  corpus-idwordposhead.txt
+
+Filtertries file:
+
+$ ./deccaxml-nuclei.py deccaxml-nuclei.xsl corpus.xml > corpus-nuclei.txt
+
+$ ./triefilter-idwordpos.py corpus-idwordposhead.txt corpus-nuclei.txt > 
+  corpus-filtertries.txt
+

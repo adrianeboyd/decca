@@ -1,0 +1,285 @@
+decca-disc.py
+
+Code to calculate all variation n-grams for corpora with discontinuous 
+constituents. Takes in a corpus (input_corpus) in line-by-line format, as 
+well as a text file of constituents augmented with NIL elements by 
+triefilter.py (filtertries), and writes out n files as described in 
+Dickinson and Meurers (2005) "Detecting Errors in Discontinuous Structural 
+Annotation" (ACL-05).
+
+    Authors:  Markus Dickinson, Detmar Meurers, and Adriane Boyd
+    Date: August 2006
+    Paper link: 
+         http://decca.osu.edu/publications/dickinson-meurers-05.html
+
+------------------------------------------------------------------
+
+README Contents:
+
+	License
+	Usage
+	Required Software
+	User Settings
+	Input/Output Format
+	Generating Input from TIGER-XML
+
+------------------------------------------------------------------
+
+License
+
+    The DECCA Project software is free software; you can redistribute it 
+    and/or modify it under the terms of the GNU General Public License as 
+    published by the Free Software Foundation; either version 2 of the 
+    License, or (at your option) any later version.
+
+    This software is distributed in the hope that it will be useful, but 
+    WITHOUT ANY WARRANTY; without even the implied warranty of 
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
+    General Public License for more details.
+
+    You should have received a copy of the GNU General Public License 
+    along with this software; if not, write to the Free Software 
+    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 
+    USA
+
+------------------------------------------------------------------
+	
+Usage
+
+$ ./decca-disc.py -u window_length -c /path/to/corpus \\
+  -b /path/to/cached_corpus -a /path/to/cached_boundaries \\
+  -t /path/to/filtertries -d /path/to/output/dir -f output_file_stem
+
+Command-line options (see also User Settings below):
+
+-u/--unit          specify the unit length
+-c/--corpus        specify the (absolute) corpus file name
+-b/--cached-corp   specify the (absolute) cached corpus file name
+-a/--cached-bound  specify the (absolute) cached boundaries file name
+-t/--ftree         specify the (absolute) filter tries file name
+-d/--directory     specify the (absolute) output directory name
+-f/--file          specify the base name for the output files
+-h/--help          display this help menu
+
+
+------------------------------------------------------------------
+
+Required Software
+
+
++ python >= 2.3 (http://www.python.org)
+
++ db >= 3.2 is needed by bsddb, see notes below (http://www.sleepycat.com)
+
++ bsddb for unix/linux:
+
+  bsddb is included in python >= 2.3 for unix/linux, but you may run into 
+  problems if python was installed before db or with an older version of 
+  db.  If you get the error "ImportError: No module named _bsddb" or an 
+  error related to db libraries, make sure you have db >= 3.2 installed 
+  and reinstall or upgrade python.
+
+  bsddb for Mac OS X:
+
+  The built-in python for some versions of Mac OS X may not include 
+  support for bsddb because db is not available.  If you get a module not 
+  found error for bsddb or "ImportError: No module named _bsddb", you may 
+  need to install db and reinstall or upgrade python.
+
+For Mac OS X:
+
+  It is easy to install everything using darwinports:
+
+  $ sudo port install python24 py-bsddb
+
+------------------------------------------------------------------
+
+User Settings
+
+Please look at the user settings section at the top of 
+decca-disc.py and adjust the settings based on your current 
+system configuration and input corpus.
+
++ Depending on your input corpus, you may wish to modify the token 
+  separator used to separate words and POS tags in the output files.  The 
+  default separator will be fine for the WSJ corpus and many other English 
+  corpora.  Any sequence which does not appear in the corpus will work, 
+  but a simple space will not work for a corpus which contains multi-word 
+  tokens (e.g. "in front of" or "[ mdash").
+
+tokensep = " ## "
+
+# the character encoding is used for the XHTML output
+
+charencoding = "iso-8859-1"
+
++ Instead of specifying the input/output filenames and unit length on the 
+  command line, you may specify them directly in decca-disc.py
+
+# Optional: default parameters to be used if unspecified on command line
+# (Files specified on the command line will override these settings.)
+
+input_corpus = "/path/to/corpus"
+cached_corpus = "/path/to/cached_corpus.bsddb"
+cached_boundaries = "/path/to/cached_boundaries.bsddb"
+filtertries = "/path/to/filtertries"
+destination_dir = "/path/to/output/dir"
+output_file_stem = "ngrams"
+
+# unit is the window we are examining -- i.e. the length of the string
+# covered by a nonterminal
+
+unit = 2
+
+# use plaintext output: 0, xhtml: 1
+
+xhtml = 1
+
+------------------------------------------------------------------
+
+Input/Output Format
+
++ The corpus file looks as follows:
+
+s1_1	``	$(
+s1_2	Ross	NE
+s1_3	Perot	NE
+s1_4	wäre	VAFIN
+s1_5	vielleicht	ADV
+s1_6	ein	ART
+s1_7	prächtiger	ADJA
+s1_8	Diktator	NN
+s1_9	''	$(
+s2_1	Konzernchefs	NN
+
+The columns are separated by tabs.  The first column is the corpus 
+position (id), the second column is the token (word), and the third column 
+is the part-of-speech tag (pos).
+
++ The filtertries file looks as follows:
+
+65	S	11111110111111	Daß	Perot	ein	Unternehmen	erfolgreich	leiten	kann	davon	sind	selbst	seine	Kritiker	überzeugt
+65	VP	11111110100001	Daß	Perot	ein	Unternehmen	erfolgreich	leiten	kann	davon	überzeugt
+65	PP	111111101	Daß	Perot	ein	Unternehmen	erfolgreich	leiten	kann	davon
+65	S	1111111	Daß	Perot	ein	Unternehmen	erfolgreich	leiten	kann
+67	VP	1111	ein	Unternehmen	erfolgreich	leiten
+67	NP	11	ein	Unternehmen
+71	NIL	1	kann
+74	NIL	1	sind
+75	NP	111	selbst	seine	Kritiker
+
+The columns are separated by tabs.  The first column is the corpus 
+position of the first token in the constituent (word token count from the 
+beginning of the corpus), the second column is the non-terminal symbol, 
+the third column is a binary corresponding to the entire span of the token 
+sequence (1's correspond to tokens in the constituent and 0's to tokens 
+not in the constituent), and the fourth and following columns are the word 
+token sequence corresponding to the constituent.  There is an entry for 
+every non-terminal in the corpus and a NIL entry for every token sequence 
+in some sentence that corresponds to a non-terminal in another sentence in 
+the corpus but doesn't correspond to a non-terminal in this sentence.
+
++ The output is a directory corresponding to the unit length containing a 
+  file for each relevant n-gram length.
+
+The plain text output is formatted as follows:
+
+005/n-grams.006:
+
+16	von ## Bündnis ## / ## 90 ## Die ## Grünen	 (von Bündnis / Die Grünen) --   8:PP [{'111X11': 8}]   8:NIL [{'10011X11': 2, '111X11': 2, '10000000011X11': 1, '10000000000011X11': 1, '100000011X11': 1, '1000000000011X11': 1}] 
+14	in ## der ## Europäischen ## Union ## EU ## )	 (in der Europäischen Union EU) --   5:PP [{'111101X': 5}]   9:NIL [{'111101X': 1, '1100000000001101X': 1, '100000000011101X': 1, '1000000000011101X': 1, '10000000000000000000000011101X': 1, '1000000010001101X': 1, '10011101X': 1, '1000011101X': 1, '10000100000000000000000001101X': 1}] 
+14	in ## ( ## der ## Europäischen ## Union ## EU	 (in ( der Europäischen EU) --   5:PP [{'1111X1': 5}]   9:NIL [{'1111X1': 1, '100000000000000000000000111X1': 1, '10000111X1': 1, '100001000000000000000000011X1': 1, '100111X1': 1, '10000000000111X1': 1, '10000000100011X1': 1, '1000000000111X1': 1, '11000000000011X1': 1}] 
+14	der ## Evangelischen ## Kirche ## Deutschland ## EKD ## )	 (der Evangelischen Kirche Deutschland EKD) --   1:NP [{'111101X': 1}]   13:NIL [{'100000000110101X': 1, '10000110101X': 1, '100000000000000110101X': 1, '1110101X': 8, '100110101X': 2}] 
+14	der ## ( ## Evangelischen ## Kirche ## Deutschland ## EKD	 (der ( Evangelischen Kirche EKD) --   1:NP [{'1111X1': 1}]   13:NIL [{'11101X1': 8, '1000000001101X1': 1, '1000000000000001101X1': 1, '100001101X1': 1, '1001101X1': 2}] 
+10	Befreiungstiger ## von ## Tamil ## Eelam ## LTTE ## )	 (Befreiungstiger von Tamil Eelam LTTE) --   2:NP [{'111101X': 1, '1111001X': 1}]   8:NIL [{'111101X': 7, '1111001X': 1}] 
+10	Befreiungstiger ## ( ## von ## Tamil ## Eelam ## LTTE	 (Befreiungstiger ( von Tamil LTTE) --   2:NP [{'11110X1': 1, '1111X1': 1}]   8:NIL [{'11110X1': 1, '1111X1': 7}] 
+6	von ## Bundesfinanzminister ## Theo ## Waigel ## CSU ## )	 (von Bundesfinanzminister Theo Waigel CSU) --   5:PP [{'111101X': 5}]   1:NIL [{'111101X': 1}] 
+6	von ## ( ## Bundesfinanzminister ## Theo ## Waigel ## CSU	 (von ( Bundesfinanzminister Theo CSU) --   5:PP [{'1111X1': 5}]   1:NIL [{'1111X1': 1}] 
+6	der ## Gemeinschaft ## Unabhängiger ## Staaten ## GUS ## )	 (der Gemeinschaft Unabhängiger Staaten GUS) --   3:NP [{'111101X': 3}]   3:NIL [{'111101X': 3}] 
+
+The first column is the count for this n-gram, the second column is the 
+separated non-terminal span (all tokens in the sentence occurring between 
+the first and last tokens in the non-terminal, so this includes tokens not 
+in the non-terminal), the fourth column is the non-terminal token sequence 
+followed by "--" followed by a description of the occurrences as follows:
+
+count:constituent [{'binary1': count1}, {'binary2', count2}, ...}]
+
+This token sequence appeared as this "constituent" "count" times.  Those 
+occurrences break down into "count1" times as "binary1", "count2" times as 
+"binary2", etc.  The binary strings contain 1's corresponding to words in 
+the constituent, X's corresponding to words in the context, and 0's 
+corresponding to words in neither the constituent nor context.  (The 
+number of 1's and X's should add up to the n-gram length examined and the 
+number of 0's is unrestricted except by sentence length in the corpus.)
+
+The XHTML output displays the same information given above with a little 
+extra information.  Each numbered item starts with the n-gram count and is 
+followed by the variation n-gram with the variation nucleus in 
+parentheses.  For each non-terminal, there is a subitem starting with the 
+count and non-terminal symbol.  Each n-gram listed starts with the 
+sentence ID from the corpus and the n-gram is marked up to show each 
+word's function in the variation n-gram.  The words in underlined green 
+are in the variation nucleus (corresponds to 1 in binary), the ones green 
+without underlining are in the context (X in binary), and the ones in 
+black are intervening words not in the variation n-gram (0 in binary).
+
+------------------------------------------------------------------
+
+Generating Input from TIGER-XML
+
+If your corpus is in typical TIGER-XML format with the begin <s> and end 
+</s> tags on separate lines, you can use the included scripts to generate 
+the input corpus and constituents files.  You will need to have libxml2 
+and libxslt installed for python.  (The windows program "msxsl" seems to 
+handle XSL tranformations on large XML files well, but unix/linux ones 
+tend to grind to a halt or crash as they try to read in the entire corpus 
+up front.  The "tigerxml-xsltproc.py" script breaks the TIGER-XML into 
+single sentences and applies the stylesheet to each sentence.)
+
+If your corpus is not in UTF-8 (the default for libxml2),
+tigerxml-xsltproc.py expects to find an xml declaration at the top of the
+corpus.xml file that specifies the correct encoding.         
+
+Corpus file:
+
+$ ./tigerxml-xsltproc.py tigerxml-idwordpos.xsl corpus.xml > \\
+input_corpus.txt
+
+Filtertries file:
+
+$ ./tigerxml-xsltproc.py tigerxml-constituents.xsl corpus.xml > \\ 
+temp-cons.txt
+
+$ ./format-disc-const.py input_corpus.txt temp-cons.txt > constituents.txt
+
+$ ./triefilter.py input_corpus.txt constituents.txt > filtertries.txt
+
+
+If you have another XSLT tool that works with large XML files, you can use 
+the stylesheets on their own, but you'll need an extra step to clean up 
+some whitespace:
+
+$ xsltproc tigerxml-idwordpos.xsl corpus.xml > temp-corpus.txt
+
+$ ./clean-space.py temp-corpus.txt > input_corpus.txt
+
+
+$ xsltproc tigerxml-constituents.xsl corpus.xml > temp-cons.txt
+
+$ ./format-disc-const.py input_corpus.txt temp-cons.txt > constituents.txt
+
+$ ./triefilter.py input_corpus.txt constituents.txt > filtertries.txt
+
+
+------------------------------------------------------------------
+
+Wrapper Script
+
+If you specify the input files in decca-disc.py, you can use the 
+simple wrapper script provided to run the code for each n-gram length 
+where there could possibly be variations in your corpus (determined from 
+filtertries.txt):
+
+$ ./wrapper.py /path/to/filtertries.txt
+

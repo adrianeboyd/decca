@@ -1,0 +1,235 @@
+decca-treebank.py
+
+    Code to calculate all variation n-grams: takes in a corpus
+    (input_corpus) in line-by-line format, as well as a text file of all
+    the constituents in a corpus (constituents), indexed by position,
+    and writes out n files as described in Dickinson and Meurers (2003)
+    "Detecting Inconsistencies in Treebanks" (TLT 2003)
+
+    Authors: Markus Dickinson, Detmar Meurers, and Adriane Boyd
+    Date: August 2006
+    Paper link:
+        http://decca.osu.edu/publications/dickinson-meurers-tlt03.html
+
+------------------------------------------------------------------
+
+README Contents:
+        
+	License
+        Usage
+        Required Software
+        User Settings
+        Input/Output Format
+        Generating Input from TIGER-XML
+
+------------------------------------------------------------------
+
+License
+
+    The DECCA Project software is free software; you can redistribute it 
+    and/or modify it under the terms of the GNU General Public License as 
+    published by the Free Software Foundation; either version 2 of the 
+    License, or (at your option) any later version.
+
+    This software is distributed in the hope that it will be useful, but 
+    WITHOUT ANY WARRANTY; without even the implied warranty of 
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
+    General Public License for more details.
+
+    You should have received a copy of the GNU General Public License 
+    along with this software; if not, write to the Free Software 
+    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 
+    USA
+
+------------------------------------------------------------------
+
+Usage
+
+$ ./decca-treebank.py -u nucleus_length -c /path/to/corpus \\
+  -b /path/to/cached_corpus -o /path/to/constituents \\
+  -n /path/to/cached_constituents -d /path/to/output/dir -f output_file_stem
+
+Command-line options (see also User Settings below):
+
+-u/--unit          specify the nucleus (unit) length
+-c/--corpus        specify the (absolute) corpus file name
+-b/--cached-corp   specify the (absolute) cached corpus file name
+-o/--constituents  specify the (absolute) constituents file name
+-n/--cached-const  specify the (absolute) cached constituents file name
+-d/--directory     specify the (absolute) output directory name
+-f/--file          specify the base name for the output files
+-h/--help          display this help menu
+
+
+------------------------------------------------------------------
+
+Required Software
+
++ python >= 2.3 (http://www.python.org)
+
++ db >= 3.2 is needed by bsddb, see notes below (http://www.sleepycat.com)
+
++ bsddb for unix/linux:
+
+  bsddb is included in python >= 2.3 for unix/linux, but you may run into 
+  problems if python was installed before db or with an older version of 
+  db.  If you get the error "ImportError: No module named _bsddb" or an 
+  error related to db libraries, make sure you have db >= 3.2 installed 
+  and reinstall or upgrade python.
+
+  bsddb for Mac OS X:
+
+  The built-in python for some versions of Mac OS X may not include 
+  support for bsddb because db is not available.  If you get a module not 
+  found error for bsddb or "ImportError: No module named _bsddb", you may 
+  need to install db and reinstall or upgrade python.
+
+For Mac OS X:
+
+  It is easy to install everything using darwinports:
+
+  $ sudo port install python24 py-bsddb
+
+------------------------------------------------------------------
+
+User Settings
+
+Please look at the user settings section at the top of 
+decca-treebank.py and adjust the settings based on your current 
+system configuration and input corpus.
+
++ Depending on your input corpus, you may wish to modify the token 
+  separator used to separate words and POS tags in the output files.  The 
+  default separator will be fine for the WSJ corpus and many other English 
+  corpora.  Any sequence which does not appear in the corpus will work, 
+  but a simple space will not work for a corpus which contains multi-word 
+  tokens (e.g. "in front of" or "[ mdash").
+
+tokensep = " ## "
+
++ Instead of specifying the input/output filenames and unit length on the 
+  command line, you may specify them directly in decca-treebank.py
+
+# Optional: default parameters to be used if unspecified on command line
+# (Files specified on the command line will override these settings.)
+
+input_corpus = "/path/to/corpus"
+cached_corpus = "/path/to/cached_corpus.bsddb"
+constituents = "/path/to/constituents"
+cached_cons = "/path/to/cached_cons.bsddb"
+destination_dir = "/path/to/output/dir"
+output_file_stem = "ngrams"
+unit = 1
+
+------------------------------------------------------------------
+
+Input/Output Format
+
++ The corpus file looks as follows:
+
+s1_1	Pierre	NNP
+s1_2	Vinken	NNP
+s1_3	,	,
+s1_4	61	CD
+s1_5	years	NNS
+s1_6	old	JJ
+s1_7	,	,
+s1_8	will	MD
+s1_9	join	VB
+s1_10	the	DT
+
+The columns are separated by tabs.  The first column is the corpus 
+position in s#_# format where the first number is the sentence number 
+and the second number is the word number within the sentence, the second 
+column is the token, and the third column is the part-of-speech tag.
+
++ The constituents file looks as follows:
+
+1	NP	Pierre	Vinken
+4	NP	61	years
+4	ADJP	61	years	old
+1	NP	Pierre	Vinken	,	61	years	old	,
+10	NP	the	board
+13	NP	a	nonexecutive	director
+12	PP	as	a	nonexecutive	director
+16	NP	Nov.	29
+
+The columns are separated by tabs.  The first column is the corpus 
+position of the first token in the constituent (word token count from the 
+beginning of the corpus), the second column is the non-terminal symbol, 
+and the third column and following columns are the word token sequence 
+corresponding to the non-terminal.
+
+The plain text output is a directory corresponding to the nucleus length 
+containing a file for each relevant n-gram length.  In the excerpt 
+below, the nucleus length is 3 and the variation n-gram length is 4:
+
+03/n-grams.004:
+
+10	, ## $ ## 15,000 ## *U*	 (1) --  8:NP  2:ADJP
+9	he ## said ## 0 ## *T*	 (1) --  8:VP  1:NIL
+9	and ## chief ## executive ## officer	 (1) --  3:NX  5:NP  1:NIL
+6	'' ## he ## said ## *T*	 (1) --  1:S  5:NIL
+6	$ ## 10 ## billion ## *U*	 (0) --  5:QP  1:NIL
+
+The first column is the count for this variation n-gram, the second 
+column is the separated n-gram token sequence, the third (and following) 
+columns contain the offset in parentheses followed by "--" followed by 
+pairs of count:constituent observations for the particular nucleus.
+
+The offset gives the position of the beginning of the nucleus within the 
+longer variation n-gram.  The offset is 0 if the nucleus beings on the 
+first word of the n-gram.  For example, the top line in the sample above 
+has an offset of 1, so the 3-gram nucleus "$ 15,000 *U*".  This 3-gram 
+nucleus was seen 8 times as NP and 2 times as ADJP in this context.
+
+The XHTML output contains the same information presented in the same order 
+as in as the plain text output in a more readable form.  Each line of the 
+plain text output corresponds to an item in the XHTML output.  The 
+separated token sequence is followed by the offset(s) grouped with the 
+associated category count(s).
+
+------------------------------------------------------------------
+
+Generating Input from TIGER-XML
+
+If your corpus is in typical TIGER-XML format with the begin <s> and end 
+</s> tags on separate lines, you can use the included scripts to generate 
+the input corpus and constituents files.  You will need to have libxml2 
+and libxslt installed for python.  (The windows program "msxsl" seems to 
+handle XSL tranformations on large XML files well, but unix/linux ones 
+tend to grind to a halt or crash as they try to read in the entire corpus 
+up front.  The "tigerxml-xsltproc.py" script breaks the TIGER-XML into 
+single sentences and applies the stylesheet to each sentence.)
+
+If your corpus is not in UTF-8 (the default for libxml2),
+tigerxml-xsltproc.py expects to find an xml declaration at the top of the
+corpus.xml file that specifies the correct encoding.         
+
+Corpus file:
+
+$ ./tigerxml-xsltproc.py tigerxml-idwordpos.xsl corpus.xml > \\
+input_corpus.txt
+
+Constituents file:
+
+$ ./tigerxml-xsltproc.py tigerxml-constituents.xsl corpus.xml > \\ 
+temp-cons.txt
+
+$ ./format-constituents.py input_corpus.txt temp-cons.txt > \\
+constituents.txt
+
+
+If you have another XSLT tool that works with large XML files, you can use 
+the stylesheets on their own, but you'll need an extra step to clean up 
+some whitespace:
+
+$ xsltproc tigerxml-idwordpos.xsl corpus.xml > temp-corpus.txt
+
+$ ./clean-space.py temp-corpus.txt > input_corpus.txt
+
+
+$ xsltproc tigerxml-constituents.xsl corpus.xml > temp-cons.txt
+
+$ ./format-constituents.py input_corpus.txt temp-cons.txt > \\
+constituents.txt

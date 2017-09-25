@@ -1,0 +1,24 @@
+In working with a range of dependency corpora which make different
+assumptions about dependency structures, we found that we needed a
+format that allowed the possibility for a word to have more than one
+head or possibly no head at all. The Malt-XML format provided a useful
+and simple XML format for dependency treebanks, so we modified and
+extended the Malt-XML schema to add the features we needed.
+
+The main differences between Malt-XML and Decca-XML:
+
+* <head> has been renamed to <header>
+
+* the head and deprel attributes of a <word> have been moved to an
+
+element <head id="" deprel=""/> within each word
+
+* the additional token types <subword> and <abstract> have been
+added
+
+* all sentence and token elements contain an optional externid
+attribute that can be used to refer back to an ID in the original
+corpus
+
+We provide the Decca-XML schema and scripts to convert Malt-XML and
+the CoNLL-X shared task format to Decca-XML.

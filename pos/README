@@ -1,0 +1,163 @@
+decca-pos.py
+
+    Code to calculate all variation n-grams: takes in a corpus in TnT 
+    format and writes out n files as described in Dickinson and Meurers 
+    (2003), "Detecting Errors in Part-of-Speech Annotation" (EACL-03)
+
+    Authors: Markus Dickinson, Detmar Meurers, and Adriane Boyd
+    Date: August 2006
+    Paper link: 
+        http://decca.osu.edu/publications/dickinson-meurers-03.html
+
+------------------------------------------------------------------
+
+README Contents:
+        
+	License
+        Usage
+        Required Software
+        User Settings
+        Input/Output Format
+        Generating Input from TIGER-XML
+        Wrapper Script
+
+------------------------------------------------------------------
+
+License
+
+    The DECCA Project software is free software; you can redistribute it 
+    and/or modify it under the terms of the GNU General Public License as 
+    published by the Free Software Foundation; either version 2 of the 
+    License, or (at your option) any later version.
+
+    This software is distributed in the hope that it will be useful, but 
+    WITHOUT ANY WARRANTY; without even the implied warranty of 
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
+    General Public License for more details.
+
+    You should have received a copy of the GNU General Public License 
+    along with this software; if not, write to the Free Software 
+    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 
+    USA
+
+------------------------------------------------------------------
+
+Usage
+
+$ ./decca-pos.py -c /path/to/corpus -d /path/to/output/dir \
+  -f output_file_stem
+
+  Options:
+
+  -c/--corpus      specify the (absolute) corpus name
+  -d/--directory   specify the (absolute) output directory name
+  -f/--file        specify the base name for the output files
+  -h/--help        display this help menu
+
+------------------------------------------------------------------
+
+Required Software
+
++ python >= 2.3
+
++ db >= 3.2 is needed by bsddb, see notes below (http://www.sleepycat.com)
+
++ bsddb for unix/linux:
+
+  bsddb is included in python >= 2.3 for unix/linux, but you may run into 
+  problems if python was installed before db or with an older version of 
+  db.  If you get the error "ImportError: No module named _bsddb" or an 
+  error related to db libraries, make sure you have db >= 3.2 installed 
+  and reinstall or upgrade python.
+
+  bsddb for Mac OS X:
+
+  The built-in python for some versions of Mac OS X may not include 
+  support for bsddb because db is not available.  If you get a module not 
+  found error for bsddb or "ImportError: No module named _bsddb", you may 
+  need to install db and reinstall or upgrade python.
+
+For Mac OS X:
+
+  It is easy to install everything using darwinports:
+
+  $ sudo port install python24 py-bsddb
+
+------------------------------------------------------------------
+
+User Settings
+
+Please look at the user settings section at the top of decca-pos.py 
+and adjust the settings based on your current system configuration and 
+input corpus.
+
++ Depending on your input corpus, you may wish to modify the token 
+  separator used to separate words and POS tags in the output files.  The 
+  default tag will be fine for the WSJ corpus and many other English 
+  corpora.  Any sequence which does not appear in the corpus will work, 
+  but a simple space will not work for a corpus which contains multi-word 
+  tokens (e.g. "in front of" or "[ mdash").
+
+tokensep = " ## "
+
++ Instead of specifying the input/output filenames on the command line, 
+  you may specify them directly in decca-pos.py
+
+input_corpus = "/path/to/corpus"
+destination_dir = "/path/to/output/directory"
+output_file_stem = "ngrams"
+
+------------------------------------------------------------------
+
+Input/Output Format
+
+The input corpus needs to be in TnT format.  Each line contains one word 
+token and one part-of-speech tag separated by a single tab character.  An 
+example:
+
+Pierre	NNP
+Vinken	NNP
+,	,
+61	CD
+years	NNS
+old	JJ
+
+
+One output file is created for each n-gram variation length 'n'.  Each 
+line in an output file corresponds to one variation n-gram.  A line 
+contains tab-separated fields containing the following information:
+
+1. total count for variation n-gram
+2. variation n-gram (word sequence)
+3. count for variation 1
+4. POS sequence for variation 1
+5. count for variation 2
+6. POS sequence for variation 2
+etc.
+
+
+------------------------------------------------------------------
+
+Generating Input from TIGER-XML
+
+If your corpus is in typical TIGER-XML format with the begin <s> and end 
+</s> tags on separate lines, you can use the included scripts to generate 
+the input corpus.  You will need to have libxml2 and libxslt installed for 
+python.  (The windows program "msxsl" seems to handle XSL tranformations 
+on large XML files well, but unix/linux ones tend to grind to a halt or 
+crash as they try to read in the entire corpus up front.  The 
+"tigerxml-xsltproc.py" script breaks the TIGER-XML into single sentences 
+and applies the stylesheet to each sentence.)
+
+Corpus file:
+
+$ ./tigerxml-xsltproc.py tigerxml-wordpos.xsl corpus.xml > \\
+input_corpus.txt
+
+If you have another XSLT tool that works with large XML files, you can use 
+the stylesheet on its own, but you'll need an extra step to clean up some 
+whitespace:
+
+$ xsltproc tigerxml-wordpos.xsl corpus.xml > temp-corpus.txt
+
+$ ./clean-space.py temp-corpus.txt > input_corpus.txt
