@@ -93,7 +93,7 @@ for option, specification in opts:
     elif option in ("-o", "--constituents"):
         constituents = specification
     elif option in ("-n", "--cached-const"):
-        cached_constituents = specification;
+        cached_cons = specification;
     elif option in ("-x", "--xhtml"):
         if xhtml == 1:
 	    newxhtml = 0
