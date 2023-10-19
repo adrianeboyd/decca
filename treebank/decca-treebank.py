@@ -37,7 +37,7 @@ tokensep = " ## "
 
 # the character encoding is used for the XHTML output
 
-charencoding = "iso-8859-1"
+charencoding = "utf-8"
 
 # Optional: default parameters to be used if unspecified on command line
 # (Files specified on command line will override these settings.)
@@ -66,6 +66,7 @@ import getopt
 import sys
 import os
 import commands
+import io
 
 # import extra modules
 import bsddb
@@ -185,7 +186,7 @@ def print_output(Output,filename):
         sys.stderr.write("\n\nError: Output file " + filename + " already exists.\n")
         sys.exit(1)
     try:
-        file = open(filename,'w')
+        file = io.open(filename, 'w', encoding="utf-8")
     except:
         sys.stderr.write("\n\nError: Unable to open file " + filename + "\n")
 	sys.exit(1)
@@ -204,7 +205,7 @@ def print_output(Output,filename):
 
     for key in okeys:
         for line in Output[key]:
-	  file.write(line + "\n")
+	  file.write(unicode(line + "\n", encoding="utf8"))
 
     if xhtml:
 	file.write("</body>\n</html>\n")
